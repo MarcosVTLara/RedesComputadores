@@ -1,27 +1,44 @@
 from socket import *
 import hashlib
-import os
+import json
 
-def checksum(data):
-    return hashlib.md5(data).hexdigest()  # Usando MD5 para checksum
 
-serverName = 'localhost'
 
-serverPort = 12000
+class UDPClient:
+    def __init__(self):
+        self.buffer = []
 
-clientSocket = socket(AF_INET, SOCK_DGRAM)
-buffer = []
-file_path = os.path.join(os.getcwd(), 'example.json')
-try:
-    with open(file_path, 'r') as file:
-        message = file.read()  # Lê o conteúdo do arquivo
-        clientSocket.sendto(message.encode(),(serverName, serverPort)) 
-except FileNotFoundError:
-    print(f"Erro: O arquivo 'example.json' não foi encontrado no diretório {os.getcwd()}.")
-    clientSocket.close()
-    exit()
+    def checksum(data):
+        return hashlib.md5(data).hexdigest()  # Usando MD5 para checksum
 
-# message, serverAddress = clientSocket.recvfrom(2048)
-# print(message.decode()) 
+def send_message(ip, port, message_dict, expected_response):
+    clientSocket = socket(AF_INET, SOCK_DGRAM)
+    clientSocket.settimeout(5)  # Optional: Set a timeout for receiving responses
+    message = json.dumps(message_dict)
+    clientSocket.sendto(message.encode(), (ip, port))
+    
+    while True:
+        try:
+            message_received, serverAddress = clientSocket.recvfrom(2048)
+            decoded_message = message_received.decode()
+            print(f"Received: {decoded_message}")
+            
+            if decoded_message == expected_response:
+                print("Desired response received.")
+                break
+        except timeout:
+            print("Timeout reached. No response received.")
+            break
 
-clientSocket.close()
+if __name__ == "__main__":
+    udp_client = UDPClient()
+    ip = 'localhost'  # Replace with the server's IP address
+    port = 12000  # Replace with the server's port number
+    message = "arquivo.txt"  # Replace with the message you want to send
+    message_example = {
+        'typeOfMessage': 'extract',
+        'file': message,
+    }
+    send_message(ip, port, message_example, "ACK")  # Replace "ACK" with the expected response from the server
+
+
