@@ -21,7 +21,8 @@ def send_message(ip, port, message_dict, expected_response):
         try:
             message_received, serverAddress = clientSocket.recvfrom(2048)
             decoded_message = message_received.decode()
-            print(f"Received: {decoded_message}")
+            received_dict = eval(decoded_message)
+            print(f"received_dict: {received_dict}")
             
             if decoded_message == expected_response:
                 print("Desired response received.")
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     udp_client = UDPClient()
     ip = 'localhost'  # Replace with the server's IP address
     port = 12000  # Replace with the server's port number
-    message = "arquivo.txt"  # Replace with the message you want to send
+    message = "arquivos.txt"  # Replace with the message you want to send
     message_example = {
         'typeOfMessage': 'extract',
         'file': message,

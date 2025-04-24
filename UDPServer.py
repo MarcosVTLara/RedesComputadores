@@ -1,7 +1,8 @@
 from socket import *
 from threading import Thread
 from ProtocolExtract import Protcol
-
+import time  # Importa o módulo time
+import json
 
 class UDPServer:
     def __init__(self):
@@ -12,17 +13,18 @@ class UDPServer:
     def handle_client(self, message, clientAddress, serverSocket):
         """Função para processar cada mensagem em uma thread separada."""
         returnMessage = self.protocol.read_message(message.decode())
+        print(f"Received message: {returnMessage}")
         if( returnMessage == None):
             self.running = False
             serverSocket.close()
             return
 
 
-        for segment in returnMessage:
-            serverSocket.sendto(segment.encode(), clientAddress)
-            Thread.sleep(0.1)  # Simula um atraso entre o envio dos segmentos
-    
-
+        for  segment in returnMessage['segments'].values():
+            print(f"Sending segment: {segment}")
+            print(f"Sending segment encode: {str(segment)}")
+            serverSocket.sendto(str(segment).encode(), clientAddress)
+            time.sleep(0.1)
 
     def runServer(self):
         serverSocket = socket(AF_INET, SOCK_DGRAM)
