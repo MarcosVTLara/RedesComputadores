@@ -93,6 +93,7 @@ class clientTkinter:
         self.dinamic_area.pack(fill='both', expand=True)
 
         self.atualizar_dados_recebidos(self.dinamic_area)
+        self.atualizar_erro()
         thread = threading.Thread(target=self.verify_file)
         thread.daemon = True  # Ensures the thread exits when the main program exits
         thread.start()
@@ -156,6 +157,13 @@ class clientTkinter:
             # Atualiza o estilo do Entry
             entry.configure(style=style_name)
 
+
+    def atualizar_erro(self):
+        if self.udp_client.error:
+            self.error_label.config(text=self.udp_client.error_content)
+        else:
+            self.error_label.config(text="")
+        self.error_label.after(500, self.atualizar_erro)  # Atualiza a cada 500ms
 if __name__ == "__main__":
     var = clientTkinter()
     clientTkinter.interface(var)
