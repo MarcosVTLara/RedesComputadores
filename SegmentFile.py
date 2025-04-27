@@ -57,6 +57,7 @@ class SegmentFile():
                             'segments': {}
                         }
             return_message[file_name]['segments'][segment_index] = self.buffer[file_name]['segments'][segment_index]
+            return_message[file_name]['segments'][segment_index]['is_last'] = True
             return return_message[file_name]
         
         return None
