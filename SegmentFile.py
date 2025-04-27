@@ -1,21 +1,17 @@
 import hashlib
 import base64
-import mimetypes
 import os
 
 class SegmentFile():
     def __init__(self):
         self.buffer = {}
         self.payloadSize = 100
-        self.error_message = 'Error: The file was not found.'
+        self.error_message = {'error': 'Error: The file was not found.'}
 
     def decode_message(self, filePath):
         file_name = os.path.basename(filePath)
         try:
             with open(filePath, 'rb') as f:
-                # mime_type, _ = mimetypes.guess_type(filePath)
-                # file_extension = mime_type.split('/')[-1] if mime_type else 'unknown'
-                # Envia os pedaços do arquivo
                 segmentPeace = 0
                 while (segment := f.read(self.payloadSize)):
                     
@@ -28,7 +24,6 @@ class SegmentFile():
                         'checksum': checksum,
                         'segment_index': segmentPeace,
                         'data': segment_b64,
-                        # 'typeOfFile': file_extension,
                         'is_last': False
 
                     }

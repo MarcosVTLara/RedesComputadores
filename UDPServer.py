@@ -17,6 +17,10 @@ class UDPServer:
             self.running = False
             serverSocket.close()
             return
+        
+        if 'error' in returnMessage:
+            serverSocket.sendto(str(returnMessage).encode(), clientAddress)
+            return
 
 
         for  segment in returnMessage['segments'].values():

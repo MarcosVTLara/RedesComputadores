@@ -84,6 +84,9 @@ class clientTkinter:
         enviar_btn = ttk.Button(frame_principal, text="Enviar", command=lambda: self.enviar_comando(ip_port_var.get()))
         enviar_btn.pack(pady=10)
 
+        self.error_label = ttk.Label(frame_principal, text="", foreground="red")
+        self.error_label.pack(anchor='w', pady=(5, 0))
+
         # Área dinâmica de dados
         ttk.Label(frame_principal, text="Dados Recebidos:").pack(anchor='w', pady=(10, 0))
         self.dinamic_area = ttk.Frame(frame_principal)
