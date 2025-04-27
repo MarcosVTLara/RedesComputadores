@@ -3,6 +3,7 @@ from tkinter import ttk
 from UDPClient import UDPClient
 import threading
 import time
+import base64
 
 class clientTkinter:
     def __init__(self):
@@ -11,6 +12,7 @@ class clientTkinter:
         self.ip = None
         self.port = None
         self.file = None
+        self.dinamic_area = None
 
     def enviar_comando(self, ip_port):
         def enviar():
@@ -38,15 +40,21 @@ class clientTkinter:
             del self.udp_client.buffer[key]
 
     def atualizar_dados_recebidos(self, container):
+        # Define o estilo amarelo para Frame e Entry
+        style = ttk.Style()
+        style.configure("Yellow.TFrame", background="yellow")
+        style.configure("Yellow.TEntry", fieldbackground="yellow")  # fieldbackground é o fundo interno do Entry
+
         # Limpa o container antes de atualizar
         for widget in container.winfo_children():
             widget.destroy()
 
-        for key, value in self.udp_client.buffer.items():
-            frame = ttk.Frame(container)
+        # Iterate over a copy of the dictionary's items
+        for key, value in sorted(self.udp_client.buffer.items()):
+            frame = ttk.Frame(container, style="Yellow.TFrame")
             frame.pack(pady=2, fill='x')
 
-            entry = ttk.Entry(frame)
+            entry = ttk.Entry(frame, style="Yellow.TEntry")
             self.table[key] = entry
             entry.insert(0, f"{key}: {value}")
             entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
@@ -54,16 +62,13 @@ class clientTkinter:
             botao_apagar = ttk.Button(frame, text="Apagar", command=lambda f=frame, k=key: self.remover_entry(f, k))
             botao_apagar.pack(side='right')
 
-        print('self.udp_client.end_of_file: ', self.udp_client.end_of_file)
-        if self.udp_client.end_of_file:
-            self.verify_file()
-
-        container.after(500, lambda: self.atualizar_dados_recebidos(container))
+        if not self.udp_client.end_of_file:
+            container.after(1000, lambda: self.atualizar_dados_recebidos(container))
 
     def interface(self):
         root = tk.Tk()
         root.title("App de Envio e Recebimento Dinâmico")
-        root.geometry("500x400")
+        root.geometry("500x600")
 
         # Frame principal
         frame_principal = ttk.Frame(root, padding=10)
@@ -81,47 +86,72 @@ class clientTkinter:
 
         # Área dinâmica de dados
         ttk.Label(frame_principal, text="Dados Recebidos:").pack(anchor='w', pady=(10, 0))
-        area_dinamica = ttk.Frame(frame_principal)
-        area_dinamica.pack(fill='both', expand=True)
+        self.dinamic_area = ttk.Frame(frame_principal)
+        self.dinamic_area.pack(fill='both', expand=True)
 
-        self.atualizar_dados_recebidos(area_dinamica)
+        self.atualizar_dados_recebidos(self.dinamic_area)
+        thread = threading.Thread(target=self.verify_file)
+        thread.daemon = True  # Ensures the thread exits when the main program exits
+        thread.start()
         root.mainloop()
 
     def verify_file(self):
-        last_key = 0
-        for key in self.udp_client.buffer.items():
+        if not self.udp_client.end_of_file:  # Check if the condition is not met
+            time.sleep(1)  # Wait for 1 second
+            self.verify_file()  # Call itself again
+            return
 
-            if (last_key == key[0]):
-                self.mudar_cor(key[0], "green")
+        time.sleep(1)  # Wait for 1 second
+
+        # Logic to execute when end_of_file is True
+        last_key = 0
+        for key, value in sorted(self.udp_client.buffer.items()):
+            if last_key == key:
+                self.mudar_cor(key, "green")
             else:
-                self.mudar_cor(key[0], "red")
+                self.mudar_cor(key, "red")
                 message_example = {
                     'typeOfMessage': 'resend',
-                    'segment_index': key[0],
+                    'segment_index': key - 1,
                     'file': self.file,
                 }
                 self.udp_client.send_message(self.ip, int(self.port), message_example)
+                self.atualizar_dados_recebidos(self.dinamic_area)
                 self.verify_file()
+                return
 
-            last_key = key[0]
+            last_key = key + 1
             time.sleep(1)
-            
-        #Save the file
-            
+
+        self.udp_client.end_of_file = False
+        self.save_file()
+        # Save the file
+
+    def save_file(self):
+        with open(self.file, 'wb') as f:
+            for key in sorted(self.udp_client.buffer.keys()):
+                decoded_segment = base64.b64decode(self.udp_client.buffer[key])
+                f.write(decoded_segment)
+        print(f"File {self.file} saved successfully.")
+
     def mudar_cor(self, key, cor):
-        if key not in self.table:
-            return
+        entry = self.table.get(key)
+        if entry:
+            # Cria um estilo novo para cada cor
+            style = ttk.Style()
+            style.theme_use('clam')
 
-        entry_widget = self.table[key]
-        style = ttk.Style()
-        estilo = f"{str(entry_widget)}.TEntry"
+            if cor == "red":
+                style_name = "Red.TEntry"
+                style.configure(style_name, fieldbackground="red")
+            elif cor == "green":
+                style_name = "Green.TEntry"
+                style.configure(style_name, fieldbackground="green")
+            else:
+                return  # Cor inválida, não faz nada
 
-        if cor == "red":
-            style.configure(estilo, fieldbackground="red")
-        elif cor == "green":
-            style.configure(estilo, fieldbackground="green")
-
-        entry_widget.configure(style=estilo)
+            # Atualiza o estilo do Entry
+            entry.configure(style=style_name)
 
 if __name__ == "__main__":
     var = clientTkinter()
