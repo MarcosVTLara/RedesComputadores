@@ -50,9 +50,14 @@ class SegmentFile():
             return self.error_message
     
     def buffer_segment(self, file_name, segment_index):
-        if self.buffer[file_name].segments[segment_index]:
-            print(f'self.buffer[{file_name}].segments[{segment_index}]:', self.buffer[file_name].segments[segment_index])
-            return self.buffer[file_name].segments[segment_index]
+        return_message = {}
+        if self.buffer[file_name]['segments'][segment_index]:
+            print(f'self.buffer[{file_name}].segments[{str(segment_index)}]:', self.buffer[file_name]['segments'][segment_index])
+            return_message[file_name] = {
+                            'segments': {}
+                        }
+            return_message[file_name]['segments'][segment_index] = self.buffer[file_name]['segments'][segment_index]
+            return return_message[file_name]
         
         return None
     

@@ -1,8 +1,7 @@
 from socket import *
 from threading import Thread
 from ProtocolExtract import Protcol
-import time  # Importa o módulo time
-import json
+import time
 
 class UDPServer:
     def __init__(self):
@@ -24,7 +23,7 @@ class UDPServer:
             print(f"Sending segment: {segment}")
             print(f"Sending segment encode: {str(segment)}")
             serverSocket.sendto(str(segment).encode(), clientAddress)
-            time.sleep(0.1)
+            time.sleep(2)
 
     def runServer(self):
         serverSocket = socket(AF_INET, SOCK_DGRAM)
@@ -44,10 +43,7 @@ class UDPServer:
         serverSocket.close()
         print("\nServer shutting down...")
 
-
 if __name__ == "__main__":
     udp_server = UDPServer()
     udp_server.runServer()
-           
-
             
