@@ -13,20 +13,47 @@ class TCPClient:
     def send_request(self, mensagem):
         self.connection.sendall(mensagem.encode('utf-8'))
 
-    def receber_resposta(self):
-        return self.connection.recv(4096).decode()
+    def receber_linha(self):
+        """Lê uma linha completa terminada por '\n'."""
+        buffer = b''
+        while b'\n' not in buffer:
+            parte = self.connection.recv(1024)
+            if not parte:
+                break
+            buffer += parte
+        return buffer.decode().strip()
 
     def receber_arquivo(self, nome_arquivo):
         self.send_request(f"ARQUIVO|{nome_arquivo}")
 
-        status = self.connection.recv(1024).decode()
+        status = self.receber_linha()
         if "ERRO" in status:
             print("Arquivo não encontrado no servidor.")
             return
 
-        nome = self.connection.recv(1024).decode().split("|")[1].strip()
-        tamanho = int(self.connection.recv(1024).decode().split("|")[1])
-        hash_servidor = self.connection.recv(1024).decode().split("|")[1].strip()
+        # Recebe NOME
+        linha_nome = self.receber_linha()
+        partes_nome = linha_nome.split("|")
+        if len(partes_nome) < 2:
+            print("Erro no protocolo ao receber o nome do arquivo:", linha_nome)
+            return
+        nome = partes_nome[1].strip()
+
+        # Recebe TAMANHO
+        linha_tamanho = self.receber_linha()
+        partes_tamanho = linha_tamanho.split("|")
+        if len(partes_tamanho) < 2:
+            print("Erro no protocolo ao receber o tamanho do arquivo:", linha_tamanho)
+            return
+        tamanho = int(partes_tamanho[1])
+
+        # Recebe HASH
+        linha_hash = self.receber_linha()
+        partes_hash = linha_hash.split("|")
+        if len(partes_hash) < 2:
+            print("Erro no protocolo ao receber o hash do arquivo:", linha_hash)
+            return
+        hash_servidor = partes_hash[1].strip()
 
         with open(f"recebido_{nome}", 'wb') as f:
             bytes_recebidos = 0
@@ -51,7 +78,7 @@ class TCPClient:
 
     def chat(self, msg):
         self.send_request(f"CHAT|{msg}")
-        resposta = self.connection.recv(1024).decode()
+        resposta = self.receber_linha()
         print("Servidor:", resposta.strip())
 
     def sair(self):
